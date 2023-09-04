@@ -34,21 +34,26 @@ def get_error_rate(file, majority):
 
 
 if __name__ == '__main__':
+    # read file path from arguments
     train_path = sys.argv[1]
     test_path = sys.argv[2]
 
+    # read train and test data
     train_data = read_file(train_path)
     test_data = read_file(test_path)
 
+    # get the most common label in train data
     data_label = get_label(train_data)
     label_majority = find_majority_votes(data_label)
-
+    
+    # create predicted label column
     train_data['preds'] = label_majority
     test_data['preds'] = label_majority
 
+    # calculate error rate for train and test data
     error_rate_train = get_error_rate(train_data, label_majority)
     error_rate_test = get_error_rate(test_data, label_majority)
-    
+
     print(error_rate_train, error_rate_test)
 
 
