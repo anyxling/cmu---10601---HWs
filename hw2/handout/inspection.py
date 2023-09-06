@@ -24,7 +24,8 @@ def get_entropy(labels):
     return entropy_value
 
 def find_majority_votes(labels):
-    if np.sum(labels) > len(labels) / 2:
+    # If the vote is tied, choose the label that is higher (i.e. 1 should be chosen before 0)
+    if np.sum(labels) > len(labels) / 2 or np.sum(labels) == len(labels) / 2:
         majority = 1
     else:
         majority = 0
