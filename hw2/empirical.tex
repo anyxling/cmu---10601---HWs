@@ -1,0 +1,70 @@
+\sectionquestion{Empirical Questions}
+\label{sec:empQ}
+
+The following questions should be completed as you work through the programming portion of this assignment.
+
+ \begin{parts}
+    \begin{tags}bkgrd-cs-prog,ml-dt-,meta--numerical\end{tags}
+    
+    \part[4] Train and test your decision tree on the heart dataset and the education dataset with four different values of max-depth, $\{0,1,2,4\}$. Report your findings in the HW2 solutions template provided. A Decision Tree with max-depth 0 is simply a \emph{majority vote classifier}; a Decision Tree with max-depth 1 is called a \emph{decision stump}. (Please round each number to the fourth decimal place, e.g. 0.1234)
+    
+    \begin{center}
+    \begin{tabular}{cc|c|c}
+        % YOUR ANSWER
+        \toprule
+        {\bf Dataset}   & {\bf Max-Depth} & {\bf Train Error} & {\bf Test Error} \\
+        \midrule
+        heart & 0 &   &   \\
+        heart & 1 &   &   \\
+        heart & 2 &   &   \\
+        heart & 4 &   &   \\
+        \midrule
+        education & 0 &   &   \\
+        education & 1 &   &   \\
+        education & 2 &   &   \\
+        education & 4 &   &   \\
+        \bottomrule
+    \end{tabular}
+    \end{center}
+    
+    
+    \clearpage
+    
+    \begin{tags}bkgrd-cs-prog,ml-dt-,	meta--plot\end{tags}
+    
+    \part[3] For the heart disease (\texttt{heart}) dataset, create a \emph{computer-generated} plot showing error on the y-axis against depth of the tree on the x-axis. On a single plot, include \emph{both} training error and testing error, clearly labeling which is which.  That is, for each possible value of max-depth ($0, 1, 2, \ldots,$ up to the number of attributes in the dataset), you should train a decision tree and report train/test error of the model's predictions. You should include an image file below using the provided, commented out code in \LaTeX{}, switching out \texttt{heart.png} to your file name as needed.
+    
+        \begin{your_solution}[title=Plot,height=15cm]
+        % YOUR ANSWER 
+        % \begin{center}
+        % \includegraphics[width=0.5\linewidth]{heart.png}
+        % % Change the "0.5\linewidth" part as necessary to make the picture fit in the box.
+        % \end{center}
+        %Your Answer
+    \end{your_solution}
+
+    \clearpage
+    
+    % \clearpage
+    \begin{tags}bkgrd-cs-prog,ml-dt-,	meta--plot\end{tags}
+    
+    \part[2] Print (do not handwrite!) the decision tree which is produced by your algorithm for the heart dataset with max depth 3. Instructions on how to print the tree could be found in section \ref{sec:printtree}.
+    
+    \newsavebox{\outputbox}
+    \setbox\outputbox=\hbox{\begin{lstlisting}[backgroundcolor=\transparent{0}\color{white}]
+% YOUR ANSWER 
+% Text here will be compiled verbatim.
+% So do not add unnecessary indents
+
+    \end{lstlisting}}
+    
+    \begin{your_solution}[title=Output,height=12cm]
+    \hspace{-1cm}
+    \usebox\outputbox
+     %Your Answer
+    \end{your_solution}
+    
+
+    \clearpage
+    
+\end{parts}

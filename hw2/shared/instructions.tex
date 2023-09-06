@@ -1,0 +1,61 @@
+\newcommand \maxsubs {10 }
+\section*{START HERE: Instructions}
+\begin{itemize}
+
+\item \textbf{Collaboration Policy}: Please read the collaboration policy here: \url{http://www.cs.cmu.edu/~mgormley/courses/10601/syllabus.html}
+
+\item\textbf{Late Submission Policy:} See the late submission policy here: \url{http://www.cs.cmu.edu/~mgormley/courses/10601/syllabus.html}
+
+\item\textbf{Submitting your work:} You will use Gradescope to submit
+  answers to all questions\ifthenelse{\equal{\homeworktype}{\string written}}{}{ and code}. Please
+  follow instructions at the end of this PDF to correctly submit all your code to Gradescope.
+
+  \begin{itemize}
+    
+ % COMMENT IF NOT USING CANVAS
+\begin{comment}
+  \item \textbf{Canvas:} Canvas (\url{https://canvas.cmu.edu}) will be
+    used for quiz-style problems (e.g. multiple choice, true / false,
+    numerical answers). Grading is done automatically.
+    %
+    You may only \textbf{submit once} on canvas, so be sure of your
+    answers before you submit. However, canvas allows you to work on
+    your answers and then close out of the page and it will save your
+    progress.  You will not be granted additional submissions, so
+    please be confident of your solutions when you are submitting your
+    assignment.
+    %
+    {\color{red} The above is true for future assignments, but this one
+    allows {\bf unlimited submissions}.}
+\end{comment}
+    
+  % COMMENT IF NOT USING GRADESCOPE
+   \item \textbf{Written:} For written problems such as short answer, multiple choice, derivations, proofs, or plots, please use the provided template. Submissions can be handwritten onto the template, but should be labeled and clearly legible. If your writing is not legible, you will not be awarded marks. Alternatively, submissions can be written in \LaTeX{}. Each derivation/proof should be completed in the boxes provided. You are responsible for ensuring that your submission contains exactly the same number of pages and the same alignment as our PDF template. If you do not follow the template, your assignment may not be graded correctly by our AI assisted grader and there will be a \textbf{\textcolor{red}{5\% penalty}} (e.g., if the homework is out of 100 points, 5 points will be deducted from your final score).
+
+  %   COMMENT IF NOT USING GRADESCOPE AUTOGRADER
+  \ifthenelse{\equal{\homeworktype}{\string written}}{}{
+\item \textbf{Programming:} You will submit your code for programming questions on the homework to Gradescope (\url{https://gradescope.com}). After uploading your code, our grading scripts will autograde your assignment by running your program on a virtual machine (VM). When you are developing, check that the version number of the programming language environment (e.g. Python 3.9.12) and versions of permitted libraries (e.g.  \texttt{numpy} 1.23.0) match those used on Gradescope. You have \maxsubs free Gradescope programming submissions. After \maxsubs submissions, you will begin to lose points from your total programming score. We recommend debugging your implementation on your local machine (or the Linux servers) and making sure your code is running correctly first before submitting your code to Gradescope.}
+
+  \end{itemize}
+  
+\ifthenelse{\equal{\homeworktype}{\string written}}{}{\item\textbf{Materials:} The data and reference output that you will need in order to complete this assignment is posted along with the writeup and template on the course website.}
+
+\end{itemize}
+
+
+%\ifthenelse{\equal{\homeworktype}{\string written}}{}{\begin{notebox}
+%\paragraph{Linear Algebra Libraries} When implementing machine learning algorithms, it is often convenient to have a linear algebra library at your disposal. In this assignment, Java users may use EJML\footnote{\url{https://ejml.org}} or ND4J\footnote{\url{https://javadoc.io/doc/org.nd4j/nd4j-api/latest/index.html}} and C++ users may use Eigen\footnote{\url{http://eigen.tuxfamily.org/}}. Details below. 
+%
+%(As usual, Python users have NumPy.)
+%
+%\begin{description}
+%\item[EJML for Java] EJML is a pure Java linear algebra package with three interfaces. We strongly recommend using the SimpleMatrix interface. The autograder will use EJML version 0.41. When compiling and running your code, we will add the additional command line argument {\footnotesize{\lstinline{-cp "linalg_lib/ejml-v0.41-libs/*:linalg_lib/nd4j-v1.0.0-M1.1-libs/*:./"}}}
+%to ensure that all the EJML jars are on the classpath as well as your code. 
+
+%\item[ND4J for Java] ND4J is a library for multidimensional tensors with an interface akin to Python's NumPy. The autograder will use ND4J version 1.0.0-M1.1. When compiling and running your code, we will add the additional command line argument {\footnotesize{\lstinline{-cp "linalg_lib/ejml-v0.41-libs/*:linalg_lib/nd4j-v1.0.0-M1.1-libs/*:./"}}} to ensure that all the ND4J jars are on the classpath as well as your code. 
+
+%\item[Eigen for C++] Eigen is a header-only library, so there is no linking to worry about---just \lstinline{#include} whatever components you need. The autograder will use Eigen version 3.4.0. The command line arguments above demonstrate how we will call you code. When compiling your code we will include, the argument \lstinline{-I./linalg_lib} in order to include the \lstinline{linalg_lib/Eigen} subdirectory, which contains all the headers.
+
+%\end{description} 
+%We have included the correct versions of EJML/ND4J/Eigen in the \lstinline{linalg_lib.zip} posted on the Coursework page of the course website for your convenience. It contains the same \lstinline{linalg_lib/} directory that we will include in the current working directory when running your tests. Do {\bf not} include EJML, ND4J, or Eigen in your homework submission; the autograder will ensure that they are in place. 
+%\end{notebox}}

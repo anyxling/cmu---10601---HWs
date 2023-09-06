@@ -1,0 +1,55 @@
+\sectionquestion{Pseudocode}
+\label{sec:pseudo}
+
+\begin{parts}
+    \begin{tags}ml-it-entropy,meta--numerical,meta--multipart\end{tags}
+    
+    \part In the programming assignment, you will need to implement three main tasks: training a decision tree on an arbitrary training set, predicting new values with a trained tree given an arbitrary input dataset, and evaluating your predictions against an arbitrary dataset's true labels. For this problem, we will focus on thinking through the algorithm for the \emph{second} task.
+    
+    Below, you will write pseudocode for the function \texttt{predict(node, example)}, which predicts the label of an \texttt{example} given a \texttt{node} of type \texttt{Node} representing the root of a \emph{trained} tree. You must approach this problem recursively and use the \texttt{Node} class we have given to you. 
+    
+    \begin{lstlisting}[escapechar=@]
+class Node:
+    def __init__(self, attr, v):
+        self.attribute = attr
+        self.left = None
+        self.right = None
+        self.vote = v
+    
+# (a) the left and right children of a node are denoted as
+#     node.left and node.right respectively, each is of type Node
+# (b) the attribute for a node is denoted as node.attribute and has
+#     type str
+# (c) if the node is a leaf, then node.vote of type str holds the 
+#     prediction from the majority vote; if node is an internal
+#     node, then node.vote has value None
+# (d) assume all attributes have values 0 and 1 only; further
+#     assume that the left child corresponds to an attribute value
+#     of 1, and the right child to a value of 0
+
+def predict(node, example):
+    # example is a dictionary which holds the attributes and the
+    # values of the attribute (ex. example['X'] = 0)
+    \end{lstlisting}
+    \begin{subparts}
+    \subpart[3] Write the base case of \texttt{predict(node, example)}. Limit your answer to 10 lines. \\
+    \begin{your_solution}[title=Your Answer,height=7.05cm]
+        
+    % INSERT YOUR ANSWER BELOW
+    \begin{your_code_solution}
+    %Your Answer
+    \end{your_code_solution}
+
+    \end{your_solution}
+    
+    \subpart[3] Write the recursive step of \texttt{predict(node, example)}.  Limit your answer to 10 lines. \\
+    \begin{your_solution}[title=Your Answer,height=7.05cm]
+        
+    % INSERT YOUR ANSWER BELOW
+    \begin{your_code_solution}
+    %Your Answer
+    \end{your_code_solution}
+        
+    \end{your_solution}
+    \end{subparts}
+\end{parts}

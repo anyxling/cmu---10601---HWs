@@ -1,0 +1,300 @@
+\section{Programming (70 points)}
+
+Your goal in this assignment is to implement a binary classifier, entirely from scratch--specifically a Decision Tree learner. In addition, we will ask you to run some end-to-end experiments on two tasks (predicting whether or not a patient has heart disease / predicting the final grade for high school students) and report your results.
+%
+You will write two programs: \texttt{inspection.py} (Section \ref{sec:inspect}) and \texttt{decision\_tree.py} (Section \ref{sec:decisiontree}). The programs you write will be automatically graded using Gradescope.
+
+\subsection{The Tasks and Datasets}
+\label{sec:data}
+
+\paragraph{Materials} Download the zip file from the course website. The zip file will have a handout folder that contains all the data that you will need in order to complete this assignment.
+
+\paragraph{Starter Code} The handout will contain a preexisting \texttt{decision\_tree.py} file that itself contains some starter code for the assignment. While we do not require that you use the starter code in your final submission, we \emph{heavily} recommend building upon the structure laid out in the starter code.
+
+\paragraph{Datasets}
+
+The handout contains three datasets. Each one contains attributes and labels and is already split into training and testing data. The first line of each \lstinline{.tsv} file contains the name of each attribute, and \emph{the class label is always the last column}.
+
+\begin{enumerate}
+\item \textbf{heart:}
+    The first task is to predict whether a patient has been (or will be) diagnosed with heart disease, based on available patient information. The attributes (aka. features) are: 
+    \begin{enumerate}
+        \item \lstinline{sex}: The sex of the patient---1 if the patient is male, and 0 if the patient is female.
+        \item \lstinline{chest_pain}: 1 if the patient has chest pain, and 0 otherwise.
+        \item \lstinline{high_blood_sugar}: 1 if the patient has high blood sugar ($>$120 mg/dl fasting), or 0 otherwise.
+        \item \lstinline{abnormal_ecg}: 1 if exercise induced angina in the patient, and 0 otherwise. Angina is a type of severe chest pain.
+        \item \lstinline{flat_ST}: 1 if the patient's ST segment (a section of an ECG) was flat during exercise, or 0 if it had some slope.
+        \item \lstinline{fluoroscopy}: 1 if a physician used fluoroscopy, and 0 otherwise. Fluoroscopy is an imaging technique used to see the flow of blood through the heart.
+        \item \lstinline{thalassemia}: 1 if the patient is known to have thalassemia, and 0 otherwise. Thalassemia is a blood disorder that may impair the oxygen-carrying capacity of the patient's red blood cells.
+        \item \lstinline{heart_disease}: 1 if the patient was diagnosed with heart disease, and 0 otherwise. This is the class label you should predict.
+    \end{enumerate}
+    The training data is in \lstinline{heart_train.tsv}, and the test data in \lstinline{heart_test.tsv}.
+\item \textbf{education:}
+    The second task is to predict the final grade for high school students. The attributes (covariates, predictors) are student grades on 5 multiple choice assignments \emph{M1} through \emph{M5}, 4 programming assignments \emph{P1} through \emph{P4}, and the final exam \emph{F}. Values of 1 indicate that a student received an A, and 0 indicates that the student did not receive an A. The training data is in \newline \lstinline{education_train.tsv}, and the test data in \lstinline{education_test.tsv}.
+\item \textbf{small:}
+    We also include \lstinline{small_train.tsv} and \lstinline{small_test.tsv}---a small, purely for demonstration version of the \textbf{heart} dataset, with \emph{only} attributes \lstinline{chest_pain} and \lstinline{thalassemia}.  
+    For this small dataset, the handout folder also contains the predictions from a reference implementation of a Decision Tree with max-depth 3 (see \lstinline{small_3_train.labels}, \lstinline{small_3_test.labels}, \lstinline{small_3_metrics.txt}).
+    You can check your own output against these to see if your implementation is correct.
+\end{enumerate}
+
+\begin{notebox} \textbf{Note:}
+For simplicity, all attributes are discretized into just two categories (i.e. each node will have at most two descendents). This applies to all the datasets in the handout, as well as the additional datasets on which we will evaluate your Decision Tree.
+\end{notebox}
+
+% \newpage
+\subsection{Program \#1: Inspecting the Data (5 points)}
+\label{sec:inspect}
+
+    Write a program \texttt{inspection.py} to calculate the label entropy at the root (i.e. the entropy of the labels before any splits) and the error rate (the percent of incorrectly classified instances) of classifying using a majority vote (picking the label with the most examples). You do not need to look at the values of any of the attributes to do these calculations; knowing the labels of each example is sufficient. \textbf{Entropy should be calculated in bits using log base 2.}
+
+\paragraph{Command Line Arguments}
+The autograder runs and evaluates the output from the files  generated, using the following command:
+
+\begin{tabular}{ll}
+\begin{lstlisting}[language=Shell]
+$ python inspection.py <input> <output>
+\end{lstlisting}
+\end{tabular}
+
+Your program should accept two command line arguments: an input file and an output file. It should read the \lstinline{.tsv} input file (of the format described in Section \ref{sec:data}), compute the quantities above, and write them to the output file so that it contains:
+\begin{quote}
+\begin{verbatim}
+entropy: <entropy value>
+error: <error value>
+\end{verbatim}
+\end{quote}
+
+\paragraph{Example}
+
+For example, suppose you wanted to inspect the file \lstinline{small_train.tsv} and write out the results to \lstinline{small_inspect.txt}. You would run the following command:
+%
+\begin{lstlisting}[language=Shell]
+$ python inspection.py small_train.tsv small_inspect.txt
+\end{lstlisting}
+%
+Afterwards, your output file \lstinline{small_inspect.txt} should contain the following:
+%
+\begin{quote}
+\begin{verbatim}
+entropy: 1.000000
+error: 0.500000
+\end{verbatim}
+\end{quote}
+%
+Our autograder will run your program on several input datasets to check that it correctly computes entropy and error, and will take minor differences due to rounding into account. You do not need to round your reported numbers! The autograder will automatically incorporate the right tolerance for float comparisons.
+
+\begin{notebox}
+For your own records, run your program on each of the datasets provided in the handout---this error rate for a \emph{majority vote} classifier is a baseline over which we would (ideally) like to improve.
+\end{notebox}
+
+% \newpage
+\subsection{Program \#2: Decision Tree Learner (65 points)}
+\label{sec:decisiontree}
+
+In \texttt{decision\_tree.py}, implement a Decision Tree learner. This file should learn a decision tree with a specified maximum depth, print the decision tree in a specified format, predict the labels of the training and testing examples, and calculate training and testing errors.
+
+\clearpage
+\textbf{Your implementation must satisfy the following requirements:}
+\begin{itemize}
+\item Use mutual information to determine which attribute to split on.
+\item Be sure you’re correctly weighting your calculation of mutual information. For a split on attribute X, $I(Y;X) = H(Y)-H(Y|X) = H(Y) - P(X=0)H(Y|X = 0) - P(X = 1)H(Y|X = 1)$.
+\item As a stopping rule, only split on an attribute if the mutual information is $>$ 0. 
+\item Do not grow the tree beyond a max-depth specified on the command line. For example, for a maximum depth of 3, split a node only if the mutual information is $>$ 0 and the current level of the node is $< 3$.
+\item Use a majority vote of the labels at each leaf to make classification decisions. If the vote is tied, choose the label that is higher (i.e. $1$ should be chosen before $0$)
+\item It is possible for different columns to have equal values for mutual information. In this case, you should split on the \emph{\textbf{first column to break ties}} (e.g. if column 0 and column 4 have the same mutual information, use column 0).
+\item Do not hard-code any aspects of the datasets into your code. We may autograde your programs on hidden datasets that include different attributes and output labels.
+\end{itemize}
+
+Careful planning will help you to correctly and concisely implement your Decision Tree learner. Here are a few \emph{hints} to get you started:
+\begin{itemize}
+    \item Write helper functions to calculate entropy and mutual information.
+    \item It is best to think of a Decision Tree as a collection of nodes, where nodes are either leaf nodes (where final decisions are made) or interior nodes (where we split on attributes). It is helpful to design a function to train a single node (i.e. a depth-0 tree), and then recursively call that function to create sub-trees.
+    \item In the recursion, keep track of the depth of the current tree so you can stop growing the tree beyond the max-depth.
+    \item Implement a function that takes a learned decision tree and data as inputs, and generates predicted labels. You can write a separate function to calculate the error of the predicted labels with respect to the given (ground-truth) labels.
+    \item Be sure to correctly handle the case where the specified maximum depth is greater than the total number of attributes.
+    \item Be sure to handle the case where max-depth is zero (i.e. a majority vote classifier). 
+    \item Look under the FAQ post on Piazza for more useful clarifications about the assignment.
+\end{itemize}
+
+\subsection{Command Line Arguments}
+
+The autograder runs and evaluates the output from the files  generated, using the following command:
+
+\begin{tabular}{ll}
+\begin{lstlisting}[language=Shell]
+$ python decision_tree.py [args...]
+\end{lstlisting}
+\end{tabular}
+
+Where above \lstinline{[args...]} is a placeholder for six command-line arguments: 
+\texttt{<train input> <test input> <max depth> <train out> <test out> <metrics out>}. These arguments are described in detail below:
+\clearpage
+\begin{enumerate}
+\item \lstinline{<train input>}: path to the training input \lstinline{.tsv} file (see Section \ref{sec:data})
+\item \lstinline{<test input>}: path to the test input \lstinline{.tsv} file (see Section \ref{sec:data})
+\item \lstinline{<max depth>}: maximum depth to which the tree should be built
+\item \lstinline{<train out>}: path of output \lstinline{.txt} file to which the predictions on the \textit{training} data should be written (see Section \ref{sec:labels})
+\item \lstinline{<test out>}: path of output \lstinline{.txt} file to which the predictions on the \emph{test} data should be written (see Section \ref{sec:labels})
+\item \lstinline{<metrics out>}: path of the output \lstinline{.txt} file to which metrics such as train and test error should be written (see Section \ref{sec:metrics})
+\end{enumerate}
+
+As an example, the following command line would run your program on the heart dataset and learn a tree with a max-depth of 2. The train predictions would be written to \lstinline{heart_2_train.txt}, the test predictions to \lstinline{heart_2_test.txt}, and the metrics to \lstinline{heart_2_metrics.txt}.
+%
+\begin{lstlisting}[language=Shell]
+$ python decision_tree.py heart_train.tsv heart_test.tsv 2 \ 
+        heart_2_train.txt heart_2_test.txt heart_2_metrics.txt
+\end{lstlisting}
+%
+The following example would run the same learning setup except with a max-depth of 3, and conveniently writing to analogously named output files, so you can can compare the two runs.
+%
+\begin{lstlisting}[language=Shell]
+$ python decision_tree.py heart_train.tsv heart_test.tsv 3 \ 
+        heart_3_train.txt heart_3_test.txt heart_3_metrics.txt
+\end{lstlisting}
+
+\subsection{Output: Labels Files}
+\label{sec:labels}
+
+Your program should write two output \lstinline{.txt} files containing the predictions of your model on training data (\lstinline{<train out>}) and test data (\lstinline{<test out>}). Each should contain the predicted labels for each example printed on a new line. Use `\texttt{\textbackslash n}' to create a new line.
+
+Your labels should exactly match those of a reference decision tree implementation---this will be checked by the autograder by running your program and evaluating your output file against the reference solution.
+
+% All labels are binary now -- this is implicit
+% \textbf{Note}: You should output your predicted labels using the same string identifiers as the original training data: e.g., for the politicians dataset you should output democrat/republican and for the education dataset you should output A/notA.
+%
+The first few lines of an example output file is given below for the small dataset:
+\begin{quote}
+\begin{verbatim}
+1
+0
+1
+1
+0
+0
+...
+\end{verbatim}
+\end{quote}
+
+\subsection{Output: Metrics File}
+\label{sec:metrics}
+
+Generate another file where you should report the training error and testing error. This file should be written to the path specified by the command line argument \lstinline{<metrics out>}. Your reported numbers should be within 0.0001 of the reference solution. You do not need to round your reported numbers! The autograder will automatically incorporate the right tolerance for float comparisons. The file should be formatted as follows:
+
+\begin{quote}
+\begin{verbatim}
+error(train): 0.214286
+error(test): 0.285714
+\end{verbatim}
+\end{quote}
+
+The values above correspond to the results from training a tree of depth 3 on \texttt{small\_train.tsv} and testing on \texttt{small\_test.tsv}. (Note that there is one space between the colon and value.)
+
+
+\subsection{Output: Printing the Tree}
+\label{sec:printtree}
+
+Finally, you should write a function to pretty-print your learned decision tree. \textbf{Your function should print your tree only \emph{after} you are done generating the fully-trained tree.} Each row should correspond to a node in the tree. They should be printed using a \emph{pre-order depth-first-search} traversal (but you may print left-to-right or right-to-left, i.e. your answer does not need to have exactly the same order as the reference below). Print the attribute of the node's parent and the attribute value corresponding to the node. Also include the sufficient statistics (i.e. count of positive / negative examples) for the data passed to that node. The row for the root should include \emph{only} those sufficient statistics. A node at depth $d$, should be prefixed by $d$ copies of the string `$\mid$ '.
+
+Below, we have provided the recommended format for printing the tree. You can print it directly rather than to a file. \textbf{This functionality of your program will NOT be autograded}.
+
+\begin{lstlisting}[language=Shell]
+$ python decision_tree.py small_train.tsv small_test.tsv 2 \ 
+small_2_train.txt small_2_test.txt small_2_metrics.txt
+
+[14 0/14 1]
+| chest_pain = 0: [4 0/12 1]
+| | thalassemia = 0: [3 0/4 1]
+| | thalassemia = 1: [1 0/8 1]
+| chest_pain = 1: [10 0/2 1]
+| | thalassemia = 0: [7 0/0 1]
+| | thalassemia = 1: [3 0/2 1]
+\end{lstlisting}
+
+% I couldn't find an easy way to show this with small dataset
+However, you should be careful that the tree might not be full. For example, with a different subset of the small dataset, there may be no nodes under \lstinline{chest_pain = 0} if all labels are the same.
+
+The following pretty-print shows the education dataset with max-depth 3.  Use this example to check your code before submitting your pretty-print of the heart dataset (asked in question 5 of the Empirical questions).  
+
+\begin{lstlisting}[language=Shell]
+$ python decision_tree.py education_train.tsv education_test.tsv 3 \
+edu_3_train.txt edu_3_test.txt edu_3_metrics.txt
+
+[65 0/135 1]
+| F = 0: [42 0/16 1]
+| | M2 = 0: [27 0/3 1]
+| | | M4 = 0: [22 0/0 1]
+| | | M4 = 1: [5 0/3 1]
+| | M2 = 1: [15 0/13 1]
+| | | M4 = 0: [14 0/7 1]
+| | | M4 = 1: [1 0/6 1]
+| F = 1: [23 0/119 1]
+| | M4 = 0: [21 0/63 1]
+| | | M2 = 0: [18 0/26 1]
+| | | M2 = 1: [3 0/37 1]
+| | M4 = 1: [2 0/56 1]
+| | | P1 = 0: [2 0/15 1]
+| | | P1 = 1: [0 0/41 1]
+\end{lstlisting}
+
+The numbers in brackets give the number of positive and negative labels from the training data in that part of the tree.
+
+\begin{notebox}
+At this point, you should be able to go back and answer questions 1-5 in the ``Empirical Questions" section of this handout.  Write your solutions in the template provided. \end{notebox}
+
+\begin{comment}
+    \subsection{Evaluation}
+    In addition to the politician and education datasets, our autograder will test your code on two more datasets, which will not be shown to you. One set contains information about various cars, and whether or not consumers decided to buy them. The other contains data about songs, and whether or not they became top hits. The data will be in .tsv files formatted like the ones provided, again with the class as the last column. Shown below are the attributes and the values they can take: 
+    
+    Music data:
+    
+    \begin{itemize}
+    \item \texttt{Attribute:year('before1950'or'after1950')}
+    \item \texttt{Attribute:solo('yes'or'no')}
+    \item \texttt{Attribute:vocal('yes'or'no')}
+    \item \texttt{Attribute:length('morethan3min'or'lessthan3min')}
+    \item \texttt{Attribute:original('yes'or'no')}
+    \item \texttt{Attribute:tempo('fast'or'slow')}
+    \item \texttt{Attribute:folk('yes'or'no')}
+    \item \texttt{Attribute:classical('yes'or'no')}
+    \item \texttt{Attribute:rhythm('yes'or'no')}
+    \item \texttt{Attribute:jazz('yes'or'no')}
+    \item \texttt{Attribute:rock('yes'or'no')}
+    \item \texttt{Class Label:hit('yes'or'no')}
+    \end{itemize}
+    
+    Cars data:
+    
+    \begin{itemize}
+    \item \texttt{Attribute:buying('expensive'or'cheap')}
+    \item \texttt{Attribute:maint('high'or'low')}
+    \item \texttt{Attribute:doors('Two'or'MoreThanTwo')}
+    \item \texttt{Attribute:length('morethan3min'or'lessthan3min')}
+    \item \texttt{Attribute:person('Two'or'MoreThanTwo')}
+    \item \texttt{Attribute:boot('large'or'small')}
+    \item \texttt{Attribute:safety('high'or'low')}
+    \item \texttt{Class Label:class('yes'or'no')}
+    \end{itemize}
+    
+    Please ensure your solution can handle data with these values.
+ 
+\end{comment}
+    
+\subsection{Submission Instructions}
+
+\paragraph{Programming}
+Please ensure you have completed the following files for submission.
+
+
+\begin{verbatim}
+inspection.py
+decision_tree.py
+\end{verbatim}
+
+When submitting your solution, make sure to select and upload both files. \textbf{Any other files will be deleted.} Ensure the files have the exact same spelling and letter casing as above. You can either directly zip the two files (by selecting the two files and compressing them -- do not compress the folder containing the files) or directly drag them to Gradescope for submission.
+
+
+\paragraph{Written Questions}
+Make sure you have completed all questions from Written component (including the collaboration policy questions) in the template provided.  When you have done so, please submit your document in \textbf{PDF format} to the corresponding assignment slot on Gradescope.
+
+
+
