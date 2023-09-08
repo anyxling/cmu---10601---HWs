@@ -13,24 +13,17 @@ def get_labels(file):
     return labels
 
 def get_entropy(labels):
-    values, counts = np.unique(labels, return_counts = True)
-    count_neg = counts[0]
-
-    prob_neg = count_neg / len(labels)
+    _, counts = np.unique(labels, return_counts = True)
+    prob_neg = counts[0] / len(labels)
     prob_pos = 1 - prob_neg
+    log_neg, log_pos = np.log2(prob_neg), np.log2(prob_pos)
 
-    entropy_value = -prob_pos * np.log2(prob_pos) -prob_neg * np.log2(prob_neg)
-
-    return entropy_value
+    return -prob_neg * np.nan_to_num(log_neg) - prob_pos * np.nan_to_num(log_pos)
+        
 
 def find_majority_votes(labels):
     # If the vote is tied, choose the label that is higher (i.e. 1 should be chosen before 0)
-    if np.sum(labels) > len(labels) / 2 or np.sum(labels) == len(labels) / 2:
-        majority = 1
-    else:
-        majority = 0
-    
-    return majority
+    return int(np.sum(labels) >= len(labels) / 2)
 
 def get_error_rate(file, majority):
     labels = file.iloc[:, -2]
