@@ -28,104 +28,27 @@ def get_labels(data):
 
     return labels
 
-
-def calc_prob(data, attr_idx: int):
-    '''
-    Calculate the probability of each value in an attribute, aka. the weights
-
-    :param data:
-    :param attr_idx: the attribute number, starting from 1
-
-    '''
-    values, indices, counts = np.unique(data.iloc[:, attr_idx], return_inverse = True, return_counts = True)
-    if not len(counts):
-        set_trace()
-    prob_neg = counts[0] / len(indices)
-    prob_pos = 1 - prob_neg
-
-    return prob_neg, prob_pos, indices
-
-def calc_conditional_entropy(indices, prob_neg, prob_pos, labels):
-    labels = labels.array
-    y_neg_x0 = []
-    y_pos_x0 = []
-    y_neg_x1 = []
-    y_pos_x1 = []
-    x0, x1 = 0, 0
-    # print(labels, "****")
-    # when x = 0
-    for idx in range(len(indices)):
-        if indices[idx] == 0:
-            x0 += 1
-            if labels[idx] == 0:
-                y_neg_x0.append(1)
-            else:
-                y_pos_x0.append(1)
-        else:
-            x1 += 1
-
-    count_x0 = 0
-    for i in y_neg_x0:
-        if i == 0:
-            count_x0 += 1
-
-    if x0:
-        prob_x0_y0 = len(y_neg_x0) / float(x0)
-    else:
-        prob_x0_y0 = 1e-6
-
-    prob_x0_y1 = 1 - prob_x0_y0
-    entropy_y_x0 = -prob_x0_y0 * np.log2(prob_x0_y0) - prob_x0_y1 * np.log2(prob_x0_y1)
-
-    # when x = 1
-    for idx in range(len(indices)):
-        if indices[idx] == 1:
-            if labels[idx] == 0:
-                y_neg_x1.append(1)
-            else:
-                y_pos_x1.append(1)
-
-    count_x1 = 0
-    for i in y_neg_x1:
-        if i == 0:
-            count_x1 += 1
-
-    if x1:
-        prob_x1_y0 = len(y_neg_x1) / float(x1)
-    else:
-        prob_x1_y0 = 1e-6
-    prob_x1_y1 = 1 - prob_x1_y0
-    entropy_y_x1 = -prob_x1_y0 * np.log2(prob_x1_y0) - prob_x1_y1 * np.log2(prob_x1_y1)
-
-    # times the weights to get H(y|x)
-    cond_entropy = prob_neg * entropy_y_x0 + prob_pos * entropy_y_x1
-    print(prob_neg, entropy_y_x0, prob_pos, entropy_y_x1)
-    print(prob_x0_y0, prob_x1_y0, prob_x0_y1, prob_x1_y1)
-    return cond_entropy
-
-def calc_mi(entropy, cond_entropy):
-    mi = entropy - cond_entropy
-
-    return mi
-
-def best_split(data, labels):
-    attr_num = data.shape[1] - 1
+def best_split(data):
+    y_entropy = get_entropy(data.iloc[:, -1])
     mi_ls = []
-    for x in range(attr_num):
-        prob_neg, prob_pos, indices = calc_prob(data, x)
-        cond_entropy = calc_conditional_entropy(indices, prob_neg, prob_pos, labels)
-        entropy = get_entropy(labels)
-        mi = calc_mi(entropy, cond_entropy)
-        # As a stopping rule, only split on an attribute if the mutual information is > 0
-        if mi > 0:
-            mi_ls.append(mi)
-    if not mi_ls: return None
-    max_mi = max(mi_ls)
-    # It is possible for different columns to have equal values for mutual information. 
-    # In this case, you should split on the first column to break ties
-    max_mi_attr_idx = mi_ls.index(max_mi)
 
-    return max_mi_attr_idx
+    for col_idx in range(len(data.columns) - 1):
+        values, counts = np.unique(data.iloc[:, col_idx], return_counts = True)
+        total_cond_entropy = 0
+        for val_idx in range(len(values)):
+            mask = data.iloc[:, col_idx] == values[val_idx]
+            filtered_data = data[mask]
+            entropy = get_entropy(filtered_data.iloc[:, -1])
+            prob = counts[val_idx] / sum(counts)
+            weighted_entropy = prob * entropy
+            total_cond_entropy += weighted_entropy
+        mi = y_entropy - total_cond_entropy
+        mi_ls.append(mi)
+    
+    max_mi = max(mi_ls)
+    attr_idx = mi_ls.index(max_mi)
+
+    return data.columns[attr_idx]
     
 class DecisionTree:
     def __init__(self, max_depth) -> None:
