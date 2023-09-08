@@ -16,9 +16,9 @@ def get_entropy(labels):
     _, counts = np.unique(labels, return_counts = True)
     prob_neg = counts[0] / len(labels)
     prob_pos = 1 - prob_neg
-    log_neg, log_pos = np.log2(prob_neg), np.log2(prob_pos)
-
-    return -prob_neg * np.nan_to_num(log_neg) - prob_pos * np.nan_to_num(log_pos)
+    log_neg = np.log2(prob_neg) if prob_neg else 0
+    log_pos = np.log2(prob_pos) if prob_pos else 0
+    return -prob_neg * log_neg - prob_pos * log_pos
         
 
 def find_majority_votes(labels):
