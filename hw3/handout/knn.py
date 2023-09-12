@@ -70,7 +70,7 @@ def predict(k: int, dist_metric: int, train_data: np.ndarray, X: np.ndarray):
         labels_train = train_data[:, -1]
         pred_labels = []
         # get each data point(row) in X and each data point in train data and compute distance
-        for data_point in X:
+        for i, data_point in enumerate(X):
             dist_ls = []
             for data_point_train in features_train:
                 if dist_metric == 0:
@@ -79,7 +79,7 @@ def predict(k: int, dist_metric: int, train_data: np.ndarray, X: np.ndarray):
                     dist = manhattan_dist(data_point, data_point_train)
                 dist_ls.append(dist)
             # get top k neighbors  
-            k_tuples = sorted(enumerate(dist_ls), key=lambda x:x[1])[:5]
+            k_tuples = sorted(enumerate(dist_ls), key=lambda x:x[1])[:k]
             k_indices = [index for index, _ in k_tuples]
             labels = [labels_train[idx] for idx in k_indices]
             # majority vote to finalize label
@@ -90,7 +90,10 @@ def predict(k: int, dist_metric: int, train_data: np.ndarray, X: np.ndarray):
             #         vote[0]
             #     label_indices = counter
             pred_label = counter.most_common(1)[0][0]
-            pred_labels.append(pred_label)
+            pred_label_int = int(pred_label)
+            pred_labels.append(pred_label_int)
+            # if pred_label_int != int(global_train[i][-1]):
+            #     print(pred_label, data_point, global_train[i])
 
         return np.array(pred_labels)    
 
@@ -148,13 +151,16 @@ def val_model(ks: range, dist_metric: int, train_data: np.ndarray, val_data: np.
     val_labels = val_data[:, -1]
     train_features = train_data[:, :-1]
     train_labels = train_data[:, -1]
+    res = []
     for k in ks:
         train_preds = predict(k, dist_metric, train_data, train_features)
         val_preds = predict(k, dist_metric, train_data, val_features)
         train_errs = compute_error(train_preds, train_labels) 
         val_errs = compute_error(val_preds, val_labels)
+
+        res.append((train_preds, val_preds, train_errs, val_errs))
         
-        return (train_preds, val_preds, train_errs, val_errs)
+    return res # return a list of tuples 
         
 	
 def crossval_model(ks: range, num_folds: 10, dist_metric: int, train_data: np.ndarray):
@@ -203,6 +209,7 @@ def crossval_model(ks: range, num_folds: 10, dist_metric: int, train_data: np.nd
     ## folds is now a list of 2d arrays
 
     # split training and test data in each fold
+    res = []
     for k in ks:
         errs_sum = 0
         preds_ls = []
@@ -214,104 +221,159 @@ def crossval_model(ks: range, num_folds: 10, dist_metric: int, train_data: np.nd
             train_folds_arr = np.concatenate(train_folds) # transform train_folds from list to a big array
             
             # predict and compute error rate
-            # print(train_folds_arr)
             preds = predict(k, dist_metric, train_folds_arr, test_fold_features)
             preds_arr = np.array(preds)
             error = compute_error(preds_arr, test_fold_labels)
             preds_ls.append(preds_arr)
             errs_sum += error
         err_rate = errs_sum / len(folds)
-
-    return (preds_ls, err_rate)
+        res.append((preds_ls, err_rate))
+    
+    return res # return a list of tuples
 
         
             
 
 if __name__ == '__main__':
-        # This takes care of command line argument parsing for you!
-        # To access a specific argument, simply access args.<argument name>.
-        # For example, to get the learning rate, you can use `args.learning_rate`.
-        parser = argparse.ArgumentParser()
-        parser.add_argument("train_input", type=str, help='path to formatted training data')
-        parser.add_argument("val_input", type=str, help='path to formatted validation data')
-        parser.add_argument("test_input", type=str, help='path to formatted test data')
-        parser.add_argument("val_type", type=int, choices=[0,1], help='validation type; 0 = validation, 1 = cross-validation')
-        parser.add_argument("dist_metric", type=int, choices=[0,1], help='distance metric; 0 = Euclidean, 1 = Manhattan')
-        parser.add_argument("min_k", type=int, help='smallest value of k to consider (inclusive)')
-        parser.add_argument("max_k", type=int, help='largest value of k to consider (inclusive)')
-        parser.add_argument("train_out", type=str, help='file to write train predictions to')
-        parser.add_argument("val_out", type=str, help='file to write train predictions to')
-        parser.add_argument("test_out", type=str, help='file to write test predictions to')
-        parser.add_argument("metrics_out", type=str, help='file to write metrics to')
-        args = parser.parse_args()
+    # This takes care of command line argument parsing for you!
+    # To access a specific argument, simply access args.<argument name>.
+    # For example, to get the learning rate, you can use `args.learning_rate`.
+    parser = argparse.ArgumentParser()
+    parser.add_argument("train_input", type=str, help='path to formatted training data')
+    parser.add_argument("val_input", type=str, help='path to formatted validation data')
+    parser.add_argument("test_input", type=str, help='path to formatted test data')
+    parser.add_argument("val_type", type=int, choices=[0,1], help='validation type; 0 = validation, 1 = cross-validation')
+    parser.add_argument("dist_metric", type=int, choices=[0,1], help='distance metric; 0 = Euclidean, 1 = Manhattan')
+    parser.add_argument("min_k", type=int, help='smallest value of k to consider (inclusive)')
+    parser.add_argument("max_k", type=int, help='largest value of k to consider (inclusive)')
+    parser.add_argument("train_out", type=str, help='file to write train predictions to')
+    parser.add_argument("val_out", type=str, help='file to write train predictions to')
+    parser.add_argument("test_out", type=str, help='file to write test predictions to')
+    parser.add_argument("metrics_out", type=str, help='file to write metrics to')
+    args = parser.parse_args()
 
-        train_input = args.train_input
-        val_input = args.val_input
-        test_input = args.test_input
-        val_type = args.val_type
-        dist_metric = args.dist_metric
-        min_k = args.min_k
-        max_k = args.max_k
-        train_out = args.train_out
-        val_out = args.val_out
-        test_out = args.test_out
-        metrics_out = args.metrics_out
+    train_input = args.train_input
+    val_input = args.val_input
+    test_input = args.test_input
+    val_type = args.val_type
+    dist_metric = args.dist_metric
+    min_k = args.min_k
+    max_k = args.max_k
+    train_out = args.train_out
+    val_out = args.val_out
+    test_out = args.test_out
+    metrics_out = args.metrics_out
 
-        train_data = pd.read_csv(train_input).to_numpy()
-        train_features = train_data[:, :-1]
-        train_labels = train_data[:, -1]
-        val_data = pd.read_csv(val_input).to_numpy()
-        val_features = val_data[:, :-1]
-        val_labels = val_data[:, -1]
-        test_data = pd.read_csv(test_input).to_numpy()
-        test_features = test_data[:, :-1]
-        test_labels = test_data[:, -1]
+    train_data = pd.read_csv(train_input).to_numpy()
+    global_train = train_data
+    train_features = train_data[:, :-1]
+    train_labels = train_data[:, -1]
+    val_data = pd.read_csv(val_input).to_numpy()
+    val_features = val_data[:, :-1]
+    val_labels = val_data[:, -1]
+    test_data = pd.read_csv(test_input).to_numpy()
+    test_features = test_data[:, :-1]
+    test_labels = test_data[:, -1]
 
-        # When calling the cross-validation method, you should combine the training and validation datasets.
-        train_val_data = np.concatenate((train_data, val_data), axis = 0)
+    # When calling the cross-validation method, you should combine the training and validation datasets.
+    train_val_data = np.concatenate((train_data, val_data), axis = 0)
+    train_val_features = train_val_data[:, :-1]
+    train_val_labels = train_val_data[:, -1]
 
-        k_range = range(min_k, max_k+1)
+    k_range = range(min_k, max_k+1)
 
-        # use validation to find the best k
-        if val_type == 0:
-            res = val_model(k_range, dist_metric, train_data, val_data)
-            k_idx = min(enumerate(res), key=lambda x:(x[1][2], x[1][3]))[0]
-        else:
-            res = crossval_model(k_range, 10, dist_metric, train_val_data)
-            k_idx = min(enumerate(res), key=lambda x:x[1][1])[0]
-        
+    # normal validation
+    if val_type == 0:
+        # predict on train dataset and get train error rates
+        train_preds_ls = []
+        train_err_ls = []
+        for k in k_range:
+            train_preds = predict(k, dist_metric, train_data, train_features) # return an array of 90 predictions as there are 90 data points
+            train_preds_ls.append(train_preds)
+            train_err = compute_error(train_preds, train_labels)
+            train_err_ls.append(train_err)
+        # output train predictions
+        with open(train_out, 'w') as train_out_file:
+            for preds in train_preds_ls:
+                train_out_file.write(", ".join(map(str, preds)))
+                train_out_file.write("\n")
+        # predict on validation dataset and get validation error rates
+        val_preds_ls = [] 
+        val_err_ls = []
+        for k in k_range:
+            val_preds = predict(k, dist_metric, train_data, val_features)
+            val_preds_ls.append(val_preds)
+            val_err = compute_error(val_preds, val_labels)
+            val_err_ls.append(val_err)
+        # output k rows of predictions
+        with open(val_out, 'w') as val_out_file:
+            for preds in val_preds_ls:
+                val_out_file.write(", ".join(map(str, preds)))
+                val_out_file.write("\n")
+            
+        # use normal validation to find the best k
+        val_res = val_model(k_range, dist_metric, train_data, val_data)
+        k_idx, _ = min(enumerate(val_res), key=lambda x:x[1][3])
         best_k = list(k_range)[k_idx]
 
-        train_preds = predict(best_k, dist_metric, train_data, train_features)
-        val_preds = predict(best_k, dist_metric, train_data, val_features)
+        # predict on test data using the best k
         test_preds = predict(best_k, dist_metric, train_data, test_features)
-        train_err = compute_error(train_preds, train_labels)
-        test_err = compute_error(test_preds, test_labels)
+        test_preds_trainval = predict(best_k, dist_metric, train_val_data, test_features)
+        test_err_train = compute_error(test_preds, test_labels)
+        test_err_trainval = compute_error(test_preds_trainval, test_labels)
 
-        with open(train_out, 'w') as train_out_file:
-            for pred in train_preds:
-                train_out_file.write(str(pred))
+        # output train and validation error rate for each k
+        with open(metrics_out, 'w') as metrics_out_file:
+            for err_idx in range(1, len(train_err_ls)+1):
+                metrics_out_file.write(f"k={err_idx} training error rate: {train_err_ls[err_idx-1]}")
+                metrics_out_file.write("\n")
+            for err_idx in range(1, len(val_err_ls)+1):
+                metrics_out_file.write(f"k={err_idx} validation error rate: {val_err_ls[err_idx-1]}")
+                metrics_out_file.write("\n")
+            metrics_out_file.write(f"test error rate (train): {test_err_train}")
+            metrics_out_file.write("\n")
+            metrics_out_file.write(f"test error rate (train + validation): {test_err_trainval}")
 
+        # output a single list of test predictions
         with open(test_out, 'w') as test_out_file:
             for pred in test_preds:
-                test_out_file.write(str(pred))
+                test_out_file.write(str(pred) + "\n")
 
+    # 10-fold-cross-validation 
+    if val_type == 1:
+        # predict on validation dataset 
+        cross_val_preds_ls = [] 
+        cross_val_err_ls = []
+        for k in k_range:
+            val_preds = predict(k, dist_metric, train_data, train_val_features) # using different val data
+            cross_val_preds_ls.append(val_preds)
+            val_err = compute_error(val_preds, train_val_labels)
+            cross_val_err_ls.append(val_err)
+        # output k rows of predictions (120 columns)
         with open(val_out, 'w') as val_out_file:
-            for pred in val_preds:
-                val_out_file.write(str(pred))
+            for preds in cross_val_preds_ls:
+                val_out_file.write(", ".join(map(str, preds)))
+                val_out_file.write("\n")
 
+        # use cross validation to find the best k
+        cross_val_res = crossval_model(k_range, 10, dist_metric, train_data)
+        k_idx, _ = min(enumerate(cross_val_res), key=lambda x:x[1][1])
+        best_k = list(k_range)[k_idx]
+
+        # predict on test data using the best k
+        test_preds = predict(best_k, dist_metric, train_data, test_features)
+        test_err = compute_error(test_preds, test_labels)
+
+        # output cross-validation error rate for each k and test error rate
         with open(metrics_out, 'w') as metrics_out_file:
-            metrics_out_file.write("error(train): " + str(train_err) + "\n")
-            metrics_out_file.write("error(test): " + str(test_err))
-
-        # # using training data to predict labels for validation data
-        # err_ls = []
-        # for k in range(min_k, max_k):
-        #     val_preds = predict(k, dist_metric, train_data, val_features)
-        #     err = compute_error(val_preds, val_labels)
-        #     err_ls.append(err)
-        # min_err_idx = err_ls.index(min(err_ls))
-        # best_k = list(k_range)[min_err_idx]
-        # test_preds = predict(best_k, dist_metric, train_data, test_features)
-        # test_err = compute_error(test_preds, test_labels)
+            for err_idx in range(1, len(cross_val_err_ls)+1):
+                metrics_out_file.write(f"k={err_idx} cross-validation error rate: {cross_val_err_ls[err_idx-1]}")
+                metrics_out_file.write("\n")
+            metrics_out_file.write(f"test error rate: {test_err}")
+    
+        # output a single list of test predictions
+        with open(test_out, 'w') as test_out_file:
+            for pred in test_preds:
+                test_out_file.write(str(pred) + "\n")
+    
 

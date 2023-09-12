@@ -1,0 +1,11 @@
+k=1 cross-validation error rate: 0.016666666666666666
+k=2 cross-validation error rate: 0.016666666666666666
+k=3 cross-validation error rate: 0.041666666666666664
+k=4 cross-validation error rate: 0.05
+k=5 cross-validation error rate: 0.05
+k=6 cross-validation error rate: 0.041666666666666664
+k=7 cross-validation error rate: 0.041666666666666664
+k=8 cross-validation error rate: 0.03333333333333333
+k=9 cross-validation error rate: 0.041666666666666664
+k=10 cross-validation error rate: 0.041666666666666664
+test error rate: 0.0
