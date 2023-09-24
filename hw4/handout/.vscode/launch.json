@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "cwd": "${workspaceFolder}",
-            "args": ["smalloutput/formatted_train_small.tsv", "smalloutput/formatted_val_small.tsv", "smalloutput/formatted_test_small.tsv" "500", "0.1"],
+            "args": ["smalloutput/formatted_train_small.tsv", "smalloutput/formatted_val_small.tsv", "smalloutput/formatted_test_small.tsv", "1", "0.1"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

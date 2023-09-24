@@ -39,10 +39,10 @@ def train(
     
     y = y.reshape(-1, 1)
 
-    for i in range(num_epoch):
+    for _ in range(num_epoch):
         z = np.dot(X, theta)
         y_hat = sigmoid(z)
-        cost = (-1/m) * np.sum(y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat))
+        # cost = (-1/m) * np.sum(y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat))
         d_theta = 1/m * np.dot(X.T, (y_hat - y))
         theta -= learning_rate * d_theta
 
