@@ -190,7 +190,7 @@ class SoftMaxCrossEntropy:
         # TODO: implement using the formula you derived in the written
         y_arr = np.zeros(y_hat.shape[0])
         y_arr[y] = 1.0
-        return y_hat - y_arr
+        return y_hat - y_arr 
     
 
 class Sigmoid:
@@ -212,6 +212,7 @@ class Sigmoid:
         """
         # TODO: perform forward pass and save any values you may need for
         #  the backward pass
+        self.x = x
         e = np.exp(x)
         return e / (1 + e)
 
@@ -223,11 +224,8 @@ class Sigmoid:
             sigmoid activation
         """
         # TODO: implement
-        z = self.forward(self.a) # get the sigmoid output
-        dz_da = z * (1 - z) # derivative of sigmoid output to input 
-        dl_da = dz * dz_da # derivative of loss to sigmoid input
-        
-        return dl_da
+        # E^-x / (1 + E^-x)^2
+        return dz * np.exp(-self.x) / (1 + np.exp(-self.x)) ** 2
 
 
 # This refers to a function type that takes in a tuple of 2 integers (row, col)
@@ -285,7 +283,8 @@ class Linear:
         # TODO: perform forward pass and save any values you may need for
         #  the backward pass
         self.x = np.append(x, 1.0) # add bias node to the input 
-        self.z = np.dot(self.w , self.x)
+        self.x = self.x.reshape(-1, 1)
+        self.z = (self.w @ self.x).flatten()
 
         return self.z
 
@@ -305,8 +304,8 @@ class Linear:
         your forward() method.
         """
         # TODO: implement
-        self.dx = np.dot(self.w.T, dz)[:-1] # Excluding the gradient for the bias
-        self.dw = np.outer(dz, self.x)
+        self.dx = np.dot(self.w.T, dz)[:-1] # Excluding the gradient for the bias 
+        self.dw = np.outer(dz, self.x) 
 
         return self.dx
 
@@ -340,11 +339,11 @@ class NN:
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
-
+        self.learning_rate = learning_rate
         # TODO: initialize modules (see section 9.1.2 of the writeup)
         #  Hint: use the classes you've implemented above!
-        self.linear1 = Linear(self.input_size, self.hidden_size, self.weight_init_fn, learning_rate)
-        self.linear2 = Linear(self.hidden_size, self.output_size, self.weight_init_fn, learning_rate)
+        self.linear1 = Linear(self.input_size, self.hidden_size, self.weight_init_fn, self.learning_rate)
+        self.linear2 = Linear(self.hidden_size, self.output_size, self.weight_init_fn, self.learning_rate)
 
     def forward(self, x: np.ndarray, y: int) -> Tuple[np.ndarray, float]:
         """
@@ -359,12 +358,12 @@ class NN:
         """
         # TODO: call forward pass for each layer
         self.a = self.linear1.forward(x)
-        self.z = Sigmoid.forward(self.a)
+        self.z = Sigmoid.forward(self, self.a)
         self.b = self.linear2.forward(self.z)
-        self.y_hat = SoftMaxCrossEntropy._softmax(self.b)
-        self.J = SoftMaxCrossEntropy._cross_entropy(y, self.y_hat)
+        self.y_hat = SoftMaxCrossEntropy._softmax(self, self.b)
+        self.J = SoftMaxCrossEntropy._cross_entropy(self, y, self.y_hat)
 
-        return self.J, self.y_hat
+        return self.y_hat, self.J
 
     def backward(self, y: int, y_hat: np.ndarray) -> None:
         """
@@ -374,19 +373,18 @@ class NN:
         :param y_hat: prediction with shape (num_classes,)
         """
         # TODO: call backward pass for each layer
-        self.gJ = 1
-        self.gb = SoftMaxCrossEntropy.backward(y, y_hat)
-        self.gz = Linear.backward(self.gb)
-        self.ga = Sigmoid.backward(self.gz)
-        self.gx = Linear.backward(self.ga)
+        self.gb = SoftMaxCrossEntropy.backward(self, y, y_hat)
+        self.gz = self.linear2.backward(self.gb)
+        self.ga = Sigmoid.backward(self, self.gz)
+        self.gx = self.linear1.backward(self.ga)
 
     def step(self):
         """
         Apply SGD update to weights.
         """
         # TODO: call step for each relevant layer
+        self.linear2.step() 
         self.linear1.step()
-        self.linear2.step()
 
     def compute_loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -420,20 +418,22 @@ class NN:
         """
         # TODO: train network
 
-        # assume it's random init
-        self.alpha = random_init((self.hidden_size, self.input_size+1)) # ??
-        self.beta = random_init((self.hidden_size, self.input_size+1)) # ??
+        if init_flag == 1:
+            self.alpha = random_init((self.hidden_size, self.input_size+1)) # ??
+            self.beta = random_init((self.output_size, self.hidden_size)) # ??
+        if init_flag == 2:
+            self.alpha = zero_init((self.hidden_size, self.input_size+1))
+            self.beta = zero_init((self.output_size, self.hidden_size))
 
         train_losses = []
         test_losses = []
         for epoch in range(n_epochs):
             X_tr_s, y_tr_s = shuffle(X_tr, y_tr, epoch)
             for tuple in zip(X_tr_s, y_tr_s):
-                J, y_hat = self.forward(tuple[0], tuple[1])
-                g_alpha = self.backward(y_tr_s, y_hat)  # ??
-                g_beta = self.backward(y_tr_s, y_hat)  # ??
-                self.alpha -= self.learning_rate * g_alpha
-                self.beta -= self.learning_rate * g_beta
+                y_hat, l = self.forward(tuple[0], tuple[1])
+                self.backward(tuple[1], y_hat)
+                self.step()
+
             tr_loss = self.compute_loss(X_tr_s, y_tr_s)
             test_loss = self.compute_loss(X_test, y_test)
             train_losses.append(tr_loss)
@@ -454,12 +454,11 @@ class NN:
         total_err = 0
         preds = []
         for tuple in zip(X, y):
-            y_hat, _ = SoftMaxCrossEntropy.forward(self, tuple[0], tuple[1])
-            idx = np.argmax(y_hat)
-            y_pred = y_hat[idx]
+            y_hat, _ = self.forward(tuple[0], tuple[1])
+            y_pred = np.argmax(y_hat)
             preds.append(y_pred)
-            err = y - y_pred
-            total_err += err
+            if tuple[1] != y_pred:
+                total_err += 1
         err_rate = total_err / y.shape[0]
 
         return preds, err_rate
