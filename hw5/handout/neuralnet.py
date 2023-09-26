@@ -224,7 +224,7 @@ class Sigmoid:
             sigmoid activation
         """
         # TODO: implement
-        # E^-x / (1 + E^-x)^2
+        # E^-x / (1 + E^-x)^2 (derivative of sigmoid formula to x)
         return dz * np.exp(-self.x) / (1 + np.exp(-self.x)) ** 2
 
 
@@ -419,8 +419,8 @@ class NN:
         # TODO: train network
 
         if init_flag == 1:
-            self.alpha = random_init((self.hidden_size, self.input_size+1)) # ??
-            self.beta = random_init((self.output_size, self.hidden_size)) # ??
+            self.alpha = random_init((self.hidden_size, self.input_size+1)) 
+            self.beta = random_init((self.output_size, self.hidden_size)) 
         if init_flag == 2:
             self.alpha = zero_init((self.hidden_size, self.input_size+1))
             self.beta = zero_init((self.output_size, self.hidden_size))
