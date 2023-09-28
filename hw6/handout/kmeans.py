@@ -10,6 +10,17 @@ import matplotlib.pyplot as plt
 np.random.seed(10301601)
 #########################
 
+def get_z(X, C):  
+    z = np.zeros(X.shape[0],)
+    for x_idx in range(len(X)):
+        dist_ls = []
+        for c in C:
+            dist = np.sum((X[x_idx] - c) ** 2)
+            dist_ls.append(dist)
+        k = dist_ls.index(min(dist_ls))
+        z[x_idx] = k
+    return z
+
 def kmpp_init(X, K):
     """ Perform K-Means++ Cluster Initialization.
 
@@ -27,24 +38,32 @@ def kmpp_init(X, K):
     # We've already do this for you below.
     N = X.shape[0]
     C = []
-    C.append(X[np.random.randint(N)])
+    C.append(X[np.random.choice(N)])
 
     for _ in range(1, K):
         # For each other data point, compute its distance to the closest cluster center
-        total_sq_min_dist = 0
-        sq_min_dist_ls = []
+        max_dist, max_ind = 0, 0
         for x_idx in range(len(X)):
-            dist_ls = []
+            dist_ls = [] # get the distances from this point to all the existing cluster centres
             for c in C:
-                dist = np.sqrt(np.sum(X[x_idx] - c) ** 2)
+                # dist = np.sqrt(np.sum(X[x_idx] - c) ** 2)
+                dist = np.sum((X[x_idx] - c) ** 2)
                 dist_ls.append(dist)
-            sq_min_dist = min(dist_ls) ** 2
-            sq_min_dist_ls.append(sq_min_dist)
-            total_sq_min_dist += sq_min_dist
-        prob_ls = [sq_min_dist / total_sq_min_dist for sq_min_dist in sq_min_dist_ls]
-        C.append(X[sq_min_dist_ls.index(max(prob_ls))]) # Select the next cluster center proportional to D(x^2)
+
+            sq_min_dist =min(dist_ls) # get the squared distance of this point to the closest cluster centres
+            if sq_min_dist > max_dist:
+                max_dist, max_ind = sq_min_dist, x_idx
+            # sq_min_dist_ls.append(sq_min_dist)
+            # total_sq_min_dist += sq_min_dist
+            
+        # prob_ls = [sq_min_dist / total_sq_min_dist for sq_min_dist in sq_min_dist_ls] # prob = D(x^2) / sum(D(x^2))
+        center = X[max_ind]
+        # if not any (np.array_equal(center, arr) for arr in C):
+        C.append(center) # Select the one with highest prob to be the next cluster centre
     
-    return np.array(C)
+    z = get_z(X, C)
+
+    return np.array(C), z
 
 def kmeans_loss(X, C, z):
     """ Compute the K-means loss.
@@ -70,7 +89,7 @@ def kmeans_loss(X, C, z):
 
     return msd
 
-def kmeans(X, K, algo=0):
+def kmeans(X, K):
     """ Cluster data X into K converged clusters.
     
         X: an N-by-M numpy ndarray, where we want to assign each
@@ -92,7 +111,7 @@ def kmeans(X, K, algo=0):
     C = X[np.random.choice(N, size=K, replace=False)]
 
     # TODO: Initialize z 
-    z = np.zeros(N,)
+    z = get_z(X, C)
     
     # TODO: Write the k-means algorithm below
     curr_msd = 0
@@ -100,13 +119,7 @@ def kmeans(X, K, algo=0):
     while prev_msd - curr_msd > 1e-4:
     # Assign each data point to the cluster with the nearest cluster center
         prev_msd = kmeans_loss(X, C, z)
-        for x_idx in range(len(X)):
-            dist_ls = []
-            for c in C:
-                dist = np.sqrt(np.sum((X[x_idx] - c) ** 2))
-                dist_ls.append(dist)
-            k = dist_ls.index(min(dist_ls))
-            z[x_idx] = k
+        z = get_z(X, C)
 
         # Recompute the cluster centers
         for k in range(K):
@@ -138,22 +151,25 @@ if __name__ == '__main__':
 
     train_data = np.loadtxt(args.train_input, dtype=np.float32, delimiter = ',')
 
-    K = args.K
+    K = args.K  
     algo = args.algorithm
 
-    C, z = kmeans(train_data, K, algo)
+    if algo == 0:
+        C, z = kmeans(train_data, K)
+    if algo == 1:
+        C, z = kmpp_init(train_data, K)
 
     np.savetxt(args.train_out, z, delimiter=",")
 
 
     # TODO: uncomment the following code to graph your cluster centers after you pass the autograder
 
-    algo_name = "rand" if algo==0 else "kmpp"
-    figures_directory = f'figures/{K}/{algo_name}'
+    # algo_name = "rand" if args.algorithm==0 else "kmpp"
+    # figures_directory = f'figures/{K}/{algo_name}'
 
-    os.makedirs(figures_directory, exist_ok=True)
+    # os.makedirs(figures_directory, exist_ok=True)
     
-    for k in range(K):
-        plt.imshow(C[k].reshape((28,28)))
-        plt.savefig(f"{figures_directory}/kmeans_K_{K}_cluster_{k}_init_{algo}")
-        plt.clf()
+    # for k in range(K):
+    #     plt.imshow(C[k].reshape((28,28)))
+    #     plt.savefig(f"{figures_directory}/kmeans_K_{K}_cluster_{k}_init_{algo}")
+    #     plt.clf()
